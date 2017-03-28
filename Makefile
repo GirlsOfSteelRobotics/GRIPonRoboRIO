@@ -8,7 +8,7 @@ RIODIR=$(HOME)/wpilib/cpp/current
 NTLIBS=-lntcore
 CSLIBS=-lcscore -lwpilibc
 OPENCVLIBS=-lopencv_imgproc -lopencv_imgcodecs -lopencv_core
-LDLIBS=-Wl,-rpath-link,$(RIODIR)/lib -L$(RIODIR)/lib $(OPENCVLIBS) $(CSLIBS) $(NTLIBS) -lstdc++ -lm
+LDLIBS=-Wl,-rpath-link,$(RIODIR)/lib -L$(RIODIR)/lib $(OPENCVLIBS) $(CSLIBS) $(NTLIBS) -lstdc++
 CPPFLAGS=-I$(GRIPPROJ) -I$(RIODIR)/include
 CXXFLAGS=-std=c++11
 
