@@ -1,7 +1,7 @@
 /*
  * GRIPonRoboRIO
  *
- * Usage: GRIPonRoboRIO [-v] [-f FPS] [-c frameCount] [-e exposure%]
+ * Usage: GRIPonRoboRIO [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg]
  */
 
 #include <iostream>
@@ -31,8 +31,9 @@ int main(int argc, char** argv)
     int framesPerSec = 10;
     int frameCount = -1;
     int exposurePercent = 16;
+    char *saveFilename = NULL;
     int opt;
-    while ((opt = getopt(argc, argv, "vf:c:e:")) != -1) {
+    while ((opt = getopt(argc, argv, "vhf:c:e:s:")) != -1) {
 	switch (opt) {
 	case 'v':
 	    verbose++;
@@ -46,13 +47,18 @@ int main(int argc, char** argv)
 	case 'e':
 	    exposurePercent = atoi(optarg);
 	    break;
+	case 's':
+	    saveFilename = optarg;
+	    break;
+	case 'h':
 	default:
-	    cerr << "Usage: " << argv[0] << " [-v] [-f FPS] [-c frameCount] [-e exposure%]" << endl;
+	    cerr << "Usage: " << argv[0] << " [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg]" << endl;
 	    cerr << "  -v            Verbose mode, dumps out contour values" << endl;
-	    cerr << "  -f FPS        Frames per second, defaulting to 10" << endl;
+	    cerr << "  -f FPS        Frames per second, defaulting to 10 (7, 10, 20, 30 are valid)" << endl;
 	    cerr << "  -c count      Limit this run to count frames, defaulting to -1 for unlimited" << endl;
-	    cerr << "  -e exposure%  0 - 100, but only changes exposures at 0, 8, 16, 24, ... 96, 100" << endl;
-	    exit(EXIT_FAILURE);
+	    cerr << "  -e exposure%  0 - 100, but only changes exposures at 0, 8, 16, 24, ... 96, and 100" << endl;
+	    cerr << "  -s image.jpg  Save the second captured image to the filename" << endl;
+	    return 1;
 	}
     }
 
@@ -60,7 +66,6 @@ int main(int argc, char** argv)
     cs::UsbCamera camera{"usbcam", 0};
     // Set the resolution and exposure
     camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, framesPerSec);
-    // TODO: Setting exposure appears to have no effect!
     camera.SetExposureManual(exposurePercent);
     // Get a CvSink for capturing frames from the camera
     cs::CvSink cvSink{"opencv_USB Camera 0"};
@@ -94,7 +99,12 @@ int main(int argc, char** argv)
 	    count--;
 	    continue;
 	}
-	//cv::imwrite("image.jpg", frame);
+	// If requested with -s, save the second image (the first one doesn't have exposure set correctly)
+	if (count == 1 && saveFilename) {
+	  cerr << "Saving second image to: " << saveFilename << endl;
+	  cv::imwrite(saveFilename, frame);
+	  saveFilename = NULL;
+	}
 	pipeline.Process(frame);
 	//cv::imwrite("imagethresh.jpg", *(pipeline.GetHsvThresholdOutput()));
 	contours = pipeline.GetFilterContoursOutput();
@@ -122,6 +132,7 @@ int main(int argc, char** argv)
 	table->PutNumberArray("height", heights);
     }
 
+    // If we got here, a -c frame count was given, so we can give an approx frame rate
     time_t stop = time(NULL);
     cerr << "Iterations: " << frameCount << endl;
     cerr << "Elapsed seconds: " << (stop - start) << endl;

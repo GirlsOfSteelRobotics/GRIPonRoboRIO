@@ -24,4 +24,4 @@ GRIPonRoboRIO.o: GRIPonRoboRIO.cpp $(GRIPPROJ)/GripPipeline.h
 $(GRIPPROJ)/GripPipeline.o: $(GRIPPROJ)/GripPipeline.cpp $(GRIPPROJ)/GripPipeline.h
 
 clean:
-	$(RM) $(OBJS) GRIPonRoboRIO
+	$(RM) $(OBJS)
