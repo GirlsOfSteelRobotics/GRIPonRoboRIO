@@ -1,7 +1,7 @@
 /*
  * GRIPonRoboRIO
  *
- * Usage: GRIPonRoboRIO [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg]
+ * Usage: GRIPonRoboRIO [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg] [-p port]
  */
 
 #include <iostream>
@@ -32,8 +32,9 @@ int main(int argc, char** argv)
     int frameCount = -1;
     int exposurePercent = 16;
     char *saveFilename = NULL;
+    int streamPort = -1;
     int opt;
-    while ((opt = getopt(argc, argv, "vhf:c:e:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "vhf:c:e:s:p:")) != -1) {
 	switch (opt) {
 	case 'v':
 	    verbose++;
@@ -50,14 +51,19 @@ int main(int argc, char** argv)
 	case 's':
 	    saveFilename = optarg;
 	    break;
+	case 'p':
+	    streamPort = atoi(optarg);
+	    break;
 	case 'h':
 	default:
-	    cerr << "Usage: " << argv[0] << " [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg]" << endl;
+	    cerr << "Usage: " << argv[0] << 
+		" [-v] [-f FPS] [-c frameCount] [-e exposure%] [-s image.jpg] [-p port]" << endl;
 	    cerr << "  -v            Verbose mode, dumps out contour values" << endl;
 	    cerr << "  -f FPS        Frames per second, defaulting to 10 (7, 10, 20, 30 are valid)" << endl;
 	    cerr << "  -c count      Limit this run to count frames, defaulting to -1 for unlimited" << endl;
 	    cerr << "  -e exposure%  0 - 100, but only changes exposures at 0, 8, 16, 24, ... 96, and 100" << endl;
 	    cerr << "  -s image.jpg  Save the second captured image to the filename" << endl;
+	    cerr << "  -p port       Publish an MJPEG stream for GRIP troubleshooting on the port number" << endl;
 	    return 1;
 	}
     }
@@ -72,6 +78,13 @@ int main(int argc, char** argv)
     cvSink.SetSource(camera);
     // OpenCV matrix to hold a frame of video
     cv::Mat frame;
+
+    // Optionally start an MJPEG stream, useful as an input to GRIP for pipeline troubleshooting
+    if (streamPort > 0) {
+	cerr << "Starting an MJPEG stream on port " << streamPort << endl;
+	cs::MjpegServer server{"serve_USB Camera 0", streamPort};
+	server.SetSource(camera);
+    }
 
     // Establish connection to Network Tables server
     NetworkTable::SetClientMode();
